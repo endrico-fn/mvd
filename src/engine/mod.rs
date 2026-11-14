@@ -3,4 +3,5 @@ pub mod lrclib;
 pub mod parser;
 pub mod spotify;
 pub mod tagger;
+pub mod worker;
 pub mod ytdlp;

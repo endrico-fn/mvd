@@ -9,6 +9,24 @@ use crate::domain::queue_item::{JobStatus, QueueJob};
 use crate::domain::subtitle::SubtitleResolutionPlan;
 use crate::engine::lrclib::LyricsDocument;
 use crate::storage::ledger::HistoryRecord;
+use crate::ui::aspect::CellPixelGeometry;
+use ratatui_image::picker::{Picker, ProtocolType};
+use ratatui_image::protocol::StatefulProtocol;
+
+/// Holds the active decoded Kitty Graphics Protocol state for the currently previewed thumbnail.
+#[derive(Clone)]
+pub struct KittyThumbnailState {
+    pub url: String,
+    pub protocol: StatefulProtocol,
+}
+
+impl std::fmt::Debug for KittyThumbnailState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("KittyThumbnailState")
+            .field("url", &self.url)
+            .finish_non_exhaustive()
+    }
+}
 
 /// The 5 dedicated workspace pages of `mvd`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -163,6 +181,9 @@ pub struct AppModel {
     pub url_input_buffer: String,
     pub filter_query_buffer: String,
     pub inspection: PreviewInspectionState,
+    pub cell_geometry: CellPixelGeometry,
+    pub image_picker: Picker,
+    pub active_thumbnail: Option<KittyThumbnailState>,
     pub has_unqueued_edits: bool,
     pub pbf03_cookie_enabled: bool,
     pub ephemeral_privacy_mode: bool,
@@ -198,6 +219,15 @@ impl AppModel {
             InputMode::Normal
         };
 
+        let cell_geometry = CellPixelGeometry::probe_kitty_stdout();
+        let mut image_picker =
+            Picker::from_fontsize((cell_geometry.cell_width_px, cell_geometry.cell_height_px));
+        if std::env::var("KITTY_WINDOW_ID").is_ok()
+            || std::env::var("TERM").is_ok_and(|t| t.contains("kitty"))
+        {
+            image_picker.set_protocol_type(ProtocolType::Kitty);
+        }
+
         Self {
             config,
             active_page: WorkspacePage::ExtractorPreview,
@@ -206,6 +236,9 @@ impl AppModel {
             url_input_buffer: String::new(),
             filter_query_buffer: String::new(),
             inspection: PreviewInspectionState::Empty,
+            cell_geometry,
+            image_picker,
+            active_thumbnail: None,
             has_unqueued_edits: false,
             pbf03_cookie_enabled: false,
             ephemeral_privacy_mode: false,
