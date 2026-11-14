@@ -10,12 +10,12 @@ use crate::domain::playlist::{GlobalPlaylistPolicy, PlaylistItemEntry, PlaylistW
 use crate::domain::queue_item::QueueJob;
 use crate::domain::subtitle::SubtitleResolutionPlan;
 use crate::engine::lrclib::{LrclibCleaner, LyricsDocument};
-use crate::engine::parser::{ParsedUrlTarget, UrlParser};
+use crate::engine::parser::{ParsedMediaUrl, UrlParser};
 use crate::engine::spotify::{SpotifyBridge, SpotifyTrackMetadata, YtSearchAudioCandidate};
 use crate::engine::tagger::AudioMetadataTagger;
 use crate::engine::ytdlp::{SmartThumbnailSelector, YtDlpThumbnailJson};
 use crate::security::cookie_vault::{CookieVault, EphemeralCookieFileGuard};
-use crate::security::profile_guard::FirefoxProfileGuard;
+use crate::security::profile_guard::ProfileGuard;
 use crate::storage::cache::BoundedCacheManager;
 use crate::storage::ledger::HistoryLedger;
 use crate::storage::state_store::QueueStateStore;
@@ -47,7 +47,7 @@ impl AsyncWorkerCoordinator {
             .timeout(std::time::Duration::from_secs(20))
             .build()
             .unwrap_or_default();
-        let max_jobs = config.max_concurrent_jobs.max(1);
+        let max_jobs = config.max_concurrent_workers.max(1);
         Self {
             tx,
             xdg,
@@ -65,7 +65,7 @@ impl AsyncWorkerCoordinator {
                 let _ = self.tx.send(Message::HistoryRecordsRefreshed(records));
             }
         }
-        let cache_bytes = BoundedCacheManager::compute_usage_bytes(&self.xdg.cache_dir);
+        let cache_bytes = BoundedCacheManager::compute_usage_bytes(&self.xdg.cache_root);
         let _ = self.tx.send(Message::CacheUsageUpdated(cache_bytes));
     }
 
@@ -121,7 +121,7 @@ impl AsyncWorkerCoordinator {
                     spawn_thumbnail_fetch(
                         self.tx.clone(),
                         self.http.clone(),
-                        self.xdg.cache_thumbs_dir.clone(),
+                        self.xdg.cache_thumbs.clone(),
                         thumb_url,
                     );
                 }
@@ -129,7 +129,7 @@ impl AsyncWorkerCoordinator {
                     spawn_lrclib_fetch(
                         self.tx.clone(),
                         self.http.clone(),
-                        self.xdg.cache_lyrics_dir.clone(),
+                        self.xdg.cache_lyrics.clone(),
                         media_id.clone(),
                         artist.unwrap_or_default(),
                         title,
@@ -207,7 +207,7 @@ impl AsyncWorkerCoordinator {
                 }
             }
             Command::PurgeXdgCache => {
-                if let Ok(reclaimed) = BoundedCacheManager::purge_all(&self.xdg.cache_dir) {
+                if let Ok(reclaimed) = BoundedCacheManager::purge_all(&self.xdg.cache_root) {
                     let _ = self.tx.send(Message::CacheUsageUpdated(0));
                     let _ = self.tx.send(Message::LogEvent {
                         severity: Severity::Success,
@@ -263,16 +263,16 @@ fn prepare_ephemeral_cookie_guard(
     let firefox_root = home.join(".mozilla").join("firefox");
     let profiles_ini = firefox_root.join("profiles.ini");
     let ini_text = std::fs::read_to_string(profiles_ini).ok()?;
-    let validated = FirefoxProfileGuard::validate_from_ini_str(
-        &ini_text,
+    let validated = ProfileGuard::resolve_sandbox_profile(
         &firefox_root,
+        &ini_text,
         &config.allowed_firefox_profile,
     )
     .ok()?;
     let job_tag = uuid::Uuid::new_v4().to_string();
     CookieVault::materialize_scoped_jar_for_job(
         &validated,
-        &xdg.runtime_cookie_vault_dir,
+        &xdg.runtime_cookie_vault,
         &job_tag,
         domain,
     )
@@ -303,12 +303,8 @@ async fn run_extractor_task(
         return;
     }
 
-    let cookie_guard = prepare_ephemeral_cookie_guard(
-        &xdg,
-        &config,
-        use_pbf03_cookies,
-        &parsed.registrable_domain,
-    );
+    let cookie_guard =
+        prepare_ephemeral_cookie_guard(&xdg, &config, use_pbf03_cookies, &parsed.host_domain);
 
     let is_collection = parsed.initial_archetype.is_collection();
     let mut args = vec![
@@ -394,7 +390,7 @@ async fn run_extractor_task(
 fn handle_playlist_json(
     tx: mpsc::UnboundedSender<Message>,
     xdg: XdgPaths,
-    parsed: ParsedUrlTarget,
+    parsed: ParsedMediaUrl,
     json_val: &serde_json::Value,
 ) {
     let playlist_id = json_val
@@ -541,7 +537,7 @@ fn handle_single_media_json(
     xdg: XdgPaths,
     config: AppConfig,
     http: reqwest::Client,
-    parsed: ParsedUrlTarget,
+    parsed: ParsedMediaUrl,
     json_val: &serde_json::Value,
 ) {
     let media_id = json_val
@@ -660,14 +656,14 @@ fn handle_single_media_json(
     });
 
     if let Some(url) = thumb_url {
-        spawn_thumbnail_fetch(tx.clone(), http.clone(), xdg.cache_thumbs_dir.clone(), url);
+        spawn_thumbnail_fetch(tx.clone(), http.clone(), xdg.cache_thumbs.clone(), url);
     }
 
     if parsed.initial_archetype == MediaArchetype::SingleAudio {
         spawn_lrclib_fetch(
             tx,
             http,
-            xdg.cache_lyrics_dir,
+            xdg.cache_lyrics,
             media_id,
             artist.unwrap_or_default(),
             title,
@@ -682,7 +678,7 @@ async fn extract_spotify_bridge_task(
     xdg: XdgPaths,
     config: AppConfig,
     http: reqwest::Client,
-    parsed: ParsedUrlTarget,
+    parsed: ParsedMediaUrl,
     use_pbf03_cookies: bool,
 ) {
     // Extract track ID from https://open.spotify.com/track/<id>
@@ -850,13 +846,13 @@ async fn extract_spotify_bridge_task(
     });
 
     if let Some(url) = thumb_url {
-        spawn_thumbnail_fetch(tx.clone(), http.clone(), xdg.cache_thumbs_dir.clone(), url);
+        spawn_thumbnail_fetch(tx.clone(), http.clone(), xdg.cache_thumbs.clone(), url);
     }
 
     spawn_lrclib_fetch(
         tx,
         http,
-        xdg.cache_lyrics_dir,
+        xdg.cache_lyrics,
         best_match.video_id.clone(),
         primary_artist,
         sp_meta.title,
@@ -1000,7 +996,7 @@ async fn hydrate_playlist_item_task(
     let auto_sub_keys = extract_object_keys(json_val.get("automatic_captions"));
 
     if let Some(url) = &thumb_url {
-        spawn_thumbnail_fetch(tx.clone(), http, xdg.cache_thumbs_dir, url.clone());
+        spawn_thumbnail_fetch(tx.clone(), http, xdg.cache_thumbs, url.clone());
     }
 
     let _ = tx.send(Message::PlaylistItemHydrated {
