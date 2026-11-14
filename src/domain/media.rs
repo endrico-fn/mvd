@@ -223,7 +223,7 @@ impl ContainerFormat {
 }
 
 /// Individual video, audio, or image stream entry extracted from `yt-dlp` JSON.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StreamCandidate {
     pub format_id: String,
     pub ext: String,

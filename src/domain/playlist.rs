@@ -90,7 +90,7 @@ impl PlaylistItemOverride {
 /// Represents a single entry inside a Video Playlist or Audio Album/Playlist.
 /// Notice that each item can have its own aspect ratio (`1:1` Art Track vs `16:9` VEVO MV),
 /// its own available resolutions, and its own `EN`/`ID` subtitle availability!
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlaylistItemEntry {
     pub index_1_based: usize,
     pub media_id: String,
@@ -109,7 +109,7 @@ pub struct PlaylistItemEntry {
 }
 
 /// Complete state of an inspected Playlist or Album with two-tier configuration (`Global` + `ItemOverride`).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlaylistWorkspace {
     pub playlist_id: String,
     pub title: String,

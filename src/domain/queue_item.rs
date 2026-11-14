@@ -45,7 +45,7 @@ impl JobStatus {
 /// Persistent checkpoint saved to `$XDG_STATE_HOME/mvd/queue.json` so that if the user
 /// detaches from TUI (`Q`) to CLI mode and presses `Ctrl+C`, reopening `mvd` can either
 /// resume from the exact `.part` byte/fragment offset OR restart cleanly.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct QueueJob {
     pub job_id: String,
     pub parent_playlist_id: Option<String>,
