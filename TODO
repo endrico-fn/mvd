@@ -1,0 +1,13 @@
+# `mvd` — Master TODO & Implementation Checklist
+
+See [plan/TODO.md](./plan/TODO.md), [plan/PRD.md](./plan/PRD.md), and [plan/RFC.md](./plan/RFC.md) for the complete specifications.
+
+## Quick Status Checklist
+
+- [x] **Step 1: System & Security Reconnaissance** (Verified `kitty 0.50.0`, `yt-dlp 2026.10.26`, `ffmpeg n9.0.2`, `sqlite3`, Wayland session, `/run/user/1000` tmpfs; identified absence of `aria2c`/`mkvmerge` to prevent host pollution)
+- [x] **Step 2: Author `AGENTS.md`** (Rust & TUI Layout Specialist, Zero-Emoji Utilitarian Design, `pbf03` Cookie Isolation, Expert MKV, Offloaded GitHub CI/CD rules)
+- [x] **Step 3: Author `plan/PRD.md`** (Product Requirements Document, Bias Detection Matrix `B1`-`B7`, Wireframes, Token System, XDG & Cache Spec, Test Fixture Matrix `T-01`-`T-06`)
+- [x] **Step 4: Author `plan/RFC.md`** (Kitty Rust Crate Stack, 4-Layer `pbf03` RAM Cookie Vault, TEA Dirty-Flag Architecture, Smart Aspect-Ratio Math, LRCLIB Below Thumbnail, `ffmpeg` MKV + `EN`/`ID` Subtitles, GitHub Actions CI/CD)
+- [x] **Step 5: Author `TODO` & `plan/TODO.md`** (Phased implementation roadmap)
+- [x] **Step 6: Non-Polluting Extraction, Subtitle, Aspect-Ratio & LRCLIB Live Test on all 7 Test Links (`T-01`..`T-07` including Spotify)**
+- [x] **Step 7: Phase 1–5 Modular Rust Codebase (`src/domain/`, `src/app/`, `src/ui/`, `src/engine/`, `src/security/`, `src/storage/`, `src/cli/`, `tests/`) & GitHub Actions CI/CD Workflow (`.github/workflows/ci.yml`)**

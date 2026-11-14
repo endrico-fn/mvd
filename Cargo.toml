@@ -1,0 +1,58 @@
+[package]
+name = "mvd"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "Multi-Platform Video & Media Downloader TUI with Kitty Graphics, pbf03 Sandbox Cookie Isolation, and Expert MKV Pipeline"
+authors = ["porvata"]
+license = "MIT"
+readme = "AGENTS.md"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+
+[dependencies]
+# TUI & Kitty Graphics Layer
+ratatui = { version = "0.29.0", default-features = false, features = ["crossterm", "all-widgets"] }
+crossterm = { version = "0.28.1", features = ["event-stream"] }
+ratatui-image = { version = "4.1.0", default-features = false, features = ["crossterm", "image-defaults"] }
+image = { version = "0.25.5", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
+rustix = { version = "0.38.41", features = ["termios", "fs"] }
+
+# Async Runtime & Networking
+tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros", "process", "sync", "fs", "io-util", "signal", "time"] }
+futures = "0.3.31"
+reqwest = { version = "0.12.9", default-features = false, features = ["rustls-tls", "json", "stream", "gzip"] }
+url = "2.5.4"
+
+# Serialization & Configuration
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
+toml = "0.8.19"
+
+# Security, Storage, Audio Tagging & System XDG
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+zeroize = { version = "1.8.1", features = ["derive"] }
+directories = "5.0.1"
+arboard = { version = "3.4.1", default-features = false, features = ["wayland-data-control"] }
+lofty = "0.22.0"
+sha2 = "0.10.8"
+hex = "0.4.3"
+uuid = { version = "1.11.0", features = ["v4", "serde"] }
+
+# Error Handling
+thiserror = "2.0.3"
+color-eyre = "0.6.3"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
