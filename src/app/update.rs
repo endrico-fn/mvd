@@ -167,15 +167,13 @@ pub fn update(model: &mut AppModel, msg: Message) -> Vec<Command> {
                 selected_row_idx,
                 active_row_lyrics,
                 ..
-            } => {
-                if workspace
-                    .entries
-                    .get(*selected_row_idx)
-                    .is_some_and(|e| e.media_id == media_id)
-                {
-                    *active_row_lyrics = lyrics;
-                    model.dirty = true;
-                }
+            } if workspace
+                .entries
+                .get(*selected_row_idx)
+                .is_some_and(|e| e.media_id == media_id) =>
+            {
+                *active_row_lyrics = lyrics;
+                model.dirty = true;
             }
             _ => {}
         },
