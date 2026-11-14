@@ -115,6 +115,7 @@ pub enum ExitTransition {
 }
 
 /// Inspected media state on `Page [1] EXTRACTOR & PREVIEW` (strictly zero hardcoded dummy data).
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum PreviewInspectionState {
     Empty,

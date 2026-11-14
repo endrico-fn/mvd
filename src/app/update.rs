@@ -262,8 +262,8 @@ fn handle_modal_keys(model: &mut AppModel, key: KeyEvent) -> Vec<Command> {
             }
             _ => {}
         },
-        ActiveModal::UnqueuedEditsGuard { pending_new_url } => match key.code {
-            KeyCode::Char('d') => {
+        ActiveModal::UnqueuedEditsGuard { pending_new_url } => {
+            if key.code == KeyCode::Char('d') {
                 model.active_modal = None;
                 model.input_mode = InputMode::Normal;
                 model.has_unqueued_edits = false;
@@ -272,8 +272,7 @@ fn handle_modal_keys(model: &mut AppModel, key: KeyEvent) -> Vec<Command> {
                     Message::TriggerUrlExtraction(pending_new_url),
                 ));
             }
-            _ => {}
-        },
+        }
         ActiveModal::MetadataEditor {
             playlist_item_index,
             draft,
@@ -417,37 +416,28 @@ fn navigate_cursor(model: &mut AppModel, delta: isize) {
                 formats,
                 selected_format_idx,
                 ..
-            } => {
-                if !formats.is_empty() {
-                    *selected_format_idx = step_index(*selected_format_idx, formats.len(), delta);
-                }
+            } if !formats.is_empty() => {
+                *selected_format_idx = step_index(*selected_format_idx, formats.len(), delta);
             }
             PreviewInspectionState::LoadedCollection {
                 workspace,
                 selected_row_idx,
                 ..
-            } => {
-                if !workspace.entries.is_empty() {
-                    *selected_row_idx =
-                        step_index(*selected_row_idx, workspace.entries.len(), delta);
-                }
+            } if !workspace.entries.is_empty() => {
+                *selected_row_idx = step_index(*selected_row_idx, workspace.entries.len(), delta);
             }
             _ => {}
         },
-        WorkspacePage::QueueManager => {
-            if !model.queue_jobs.is_empty() {
-                model.selected_queue_idx =
-                    step_index(model.selected_queue_idx, model.queue_jobs.len(), delta);
-            }
+        WorkspacePage::QueueManager if !model.queue_jobs.is_empty() => {
+            model.selected_queue_idx =
+                step_index(model.selected_queue_idx, model.queue_jobs.len(), delta);
         }
-        WorkspacePage::HistoryLedger => {
-            if !model.history_records.is_empty() {
-                model.selected_history_idx = step_index(
-                    model.selected_history_idx,
-                    model.history_records.len(),
-                    delta,
-                );
-            }
+        WorkspacePage::HistoryLedger if !model.history_records.is_empty() => {
+            model.selected_history_idx = step_index(
+                model.selected_history_idx,
+                model.history_records.len(),
+                delta,
+            );
         }
         _ => {}
     }

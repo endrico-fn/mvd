@@ -64,6 +64,7 @@ impl HistoryLedger {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn record_completed(
         &self,
         platform: &str,

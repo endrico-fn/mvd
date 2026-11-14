@@ -14,6 +14,7 @@ pub struct FfmpegMuxPlan {
 pub struct FfmpegCommandBuilder;
 
 impl FfmpegCommandBuilder {
+    #[allow(clippy::too_many_arguments)]
     #[must_use]
     pub fn build_video_mux_plan(
         video_input: &Path,
